@@ -1,4 +1,4 @@
-package org.app.nms.driver.client.pingobject;
+package org.aap.nms.driver.client.pingobject;
 
 import java.util.Iterator;
 import java.util.LinkedList;

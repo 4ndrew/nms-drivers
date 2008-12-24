@@ -3,7 +3,6 @@
 	<classpathentry kind="src" path="server"/>
 	<classpathentry kind="src" path="client"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/nms"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/odisp"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/tools"/>
 	<classpathentry kind="lib" path="/odisp/lib/jug.jar"/>
@@ -13,5 +12,6 @@
 	<classpathentry kind="lib" path="/odisp/lib/commons-lang-2.1.jar"/>
 	<classpathentry kind="lib" path="/odisp/lib/commons-configuration-1.1.jar"/>
 	<classpathentry kind="lib" path="/odisp/lib/commons-collections-3.1.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/nms"/>
 	<classpathentry kind="output" path="build"/>
 </classpath>

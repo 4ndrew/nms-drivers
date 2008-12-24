@@ -92,7 +92,7 @@
 
 		<jar basedir="${dir.build}"
 			destfile="${dir.release.client}/sm-aap-drivers.jar"
-			includes="org/app/nms/driver/client/pingobject/**/*" excludes="**/*html">
+			includes="org/aap/nms/driver/client/pingobject/**/*" excludes="**/*html">
 			<manifest>
 				<attribute name="Built-By" value="${user.name}" />
 			</manifest>
@@ -104,12 +104,24 @@
 
 		<jar basedir="${dir.build}"
 			destfile="${dir.release.server}/sm-aap-drivers.jar"
-			includes="org/app/nms/driver/server/pingobject/**/*" excludes="**/*html">
+			includes="org/aap/nms/driver/server/pingobject/**/*" excludes="**/*html">
 			<manifest>
 				<attribute name="Built-By" value="${user.name}" />
 			</manifest>
 		</jar>
 	</target>
+	
+	<target name="jar-sm-aap-performance-server" depends="build">
+     <delete file="${dir.release.server}/sm-aap-performance.jar" />
+
+		 <jar basedir="${dir.build}"
+				destfile="${dir.release.server}/sm-aap-perfomance.jar"
+				includes="org/aap/nms/performance/server/**/*" excludes="**/*html">
+				<manifest>
+					<attribute name="Built-By" value="${user.name}" />
+				</manifest>
+			</jar>
+		</target>
 
 	<target name="jar-sm-aap-drivers-messages" depends="build">
 		<delete file="${dir.release.client}/sm-aap-drivers-messages.jar" />
@@ -117,7 +129,7 @@
 
 		<jar basedir="${dir.build}"
 			destfile="${dir.release.server}/sm-aap-drivers-messages.jar"
-			includes="org/app/nms/driver/messages/**/*" excludes="**/*html">
+			includes="org/aap/nms/driver/messages/**/*" excludes="**/*html">
 			<manifest>
 				<attribute name="Built-By" value="${user.name}" />
 			</manifest>
@@ -126,6 +138,6 @@
 		<copy file="${dir.release.server}/sm-aap-drivers-messages.jar" tofile="${dir.release.client}/sm-aap-drivers-messages.jar" />
 	</target>
 
-	<target name="jar" depends="jar-sm-aap-drivers-server, jar-sm-aap-drivers-client, jar-sm-aap-drivers-messages, jar-sm-aap-drivers-resources" />
+	<target name="jar" depends="jar-sm-aap-drivers-server, jar-sm-aap-drivers-client, jar-sm-aap-drivers-messages, jar-sm-aap-drivers-resources, jar-sm-aap-performance-server" />
 </project>
 

@@ -1,4 +1,4 @@
-package org.app.nms.driver.server.pingobject;
+package org.aap.nms.driver.server.pingobject;
 
 import java.io.IOException;
 import java.net.InetAddress;
