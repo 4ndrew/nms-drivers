@@ -1,0 +1,131 @@
+<?xml version="1.0"?>
+<!-- ====================================================================== 
+     01.12.2008
+	 
+	 NMS Andrew A. Porokhin additional object drivers.
+     ====================================================================== -->
+<project name="NMS " default="all">
+	<!-- dir.top : top directory -->
+	<condition property="dir.top" value="${basedir}/../nms">
+		<not>
+			<isset property="dir.top" />
+		</not>
+	</condition>
+	<!-- dir.build : build directory -->
+	<condition property="dir.build" value="${dir.top}/build">
+		<not>
+			<isset property="dir.build" />
+		</not>
+	</condition>
+	<!-- dir.release.root : release directory for packages -->
+	<condition property="dir.release.root" value="${dir.top}/release">
+		<not>
+			<isset property="dir.release.root" />
+		</not>
+	</condition>
+	<!-- dir.library : libraries directory -->
+	<condition property="dir.library" value="${dir.top}/nms-base/lib">
+		<not>
+			<isset property="dir.library" />
+		</not>
+	</condition>
+
+	<property name="dir.release.server" location="${dir.release.root}/server" />
+	<property name="dir.release.client" location="${dir.release.root}/client" />
+
+	<description>
+    Make file for server transports code.
+  </description>
+
+	<target name="all" description="--> aap drivers code" depends="build" />
+
+	<target name="build" depends="messages">
+		<javac srcdir="server" destdir="${dir.build}" source="1.4">
+			<classpath>
+				<pathelement location="${dir.top}/nms-base/lib/odisp.jar" />
+				<pathelement location="${dir.top}/nms-base/lib/jug.jar" />
+			</classpath>
+		</javac>
+		<javac srcdir="client" destdir="${dir.build}">
+			<classpath>
+				<pathelement location="${dir.top}/nms-base/lib/odisp.jar" />
+				<pathelement location="${dir.top}/nms-base/lib/jug.jar" />
+			</classpath>
+		</javac>
+	</target>
+	
+	<target name="client-lang">
+		<native2ascii encoding="KOI8-R"
+			src="client/resources/client/language"
+			dest="client/resources/client/language"
+			includes="**/*.src" ext=".lng" />
+	</target>
+
+	<target name="server-lang">
+		<native2ascii encoding="KOI8-R"
+			src="server/resources/server/language"
+			dest="server/resources/server/language"
+			includes="**/*.src" ext=".lng" />
+	</target>
+
+	<target name="messages">
+		<java classname="org.valabs.tplParser.TplParser" classpath="${dir.top}/tools/tplParser.jar">
+			<arg value="${basedir}/messages" />
+		</java>
+		<javac srcdir="messages" destdir="${dir.build}" source="1.4">
+			<classpath>
+				<pathelement location="${dir.top}/nms-base/lib/odisp.jar" />
+				<pathelement location="${dir.top}/nms-base/lib/jug.jar" />
+			</classpath>
+		</javac>
+	</target>
+	
+	<target name="jar-sm-aap-drivers-resources" depends="client-lang">
+	    <delete file="${dir.release.client}/sm-aap-drivers-resources.jar"/>
+	    <jar basedir="client"
+			destfile="${dir.release.client}/sm-aap-drivers-resources.jar"
+			includes="resources/client/**/*png, resources/client/**/*jpg, resources/client/**/*gif, resources/client/**/*xml, resources/client/**/*lng, resources/client/**/*wav" excludes="**/*html"/>
+	</target>
+
+	<target name="jar-sm-aap-drivers-client" depends="build">
+		<delete file="${dir.release.client}/sm-aap-drivers.jar" />
+
+		<jar basedir="${dir.build}"
+			destfile="${dir.release.client}/sm-aap-drivers.jar"
+			includes="org/app/nms/driver/client/pingobject/**/*" excludes="**/*html">
+			<manifest>
+				<attribute name="Built-By" value="${user.name}" />
+			</manifest>
+		</jar>
+	</target>
+	
+	<target name="jar-sm-aap-drivers-server" depends="build">
+		<delete file="${dir.release.server}/sm-aap-drivers.jar" />
+
+		<jar basedir="${dir.build}"
+			destfile="${dir.release.server}/sm-aap-drivers.jar"
+			includes="org/app/nms/driver/server/pingobject/**/*" excludes="**/*html">
+			<manifest>
+				<attribute name="Built-By" value="${user.name}" />
+			</manifest>
+		</jar>
+	</target>
+
+	<target name="jar-sm-aap-drivers-messages" depends="build">
+		<delete file="${dir.release.client}/sm-aap-drivers-messages.jar" />
+		<delete file="${dir.release.server}/sm-aap-drivers-messages.jar" />
+
+		<jar basedir="${dir.build}"
+			destfile="${dir.release.server}/sm-aap-drivers-messages.jar"
+			includes="org/app/nms/driver/messages/**/*" excludes="**/*html">
+			<manifest>
+				<attribute name="Built-By" value="${user.name}" />
+			</manifest>
+		</jar>
+
+		<copy file="${dir.release.server}/sm-aap-drivers-messages.jar" tofile="${dir.release.client}/sm-aap-drivers-messages.jar" />
+	</target>
+
+	<target name="jar" depends="jar-sm-aap-drivers-server, jar-sm-aap-drivers-client, jar-sm-aap-drivers-messages, jar-sm-aap-drivers-resources" />
+</project>
+

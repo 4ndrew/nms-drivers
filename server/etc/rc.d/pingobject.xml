@@ -1,0 +1,4 @@
+<!-- Version: 1.0 -->
+<config>
+  <object name="org.app.nms.driver.server.pingobject.Ping"/>
+</config>
