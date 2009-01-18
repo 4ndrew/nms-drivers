@@ -1,0 +1,8 @@
+DATABASE PERFORMANCE
+
+Test enviroment:
+ * ODISP
+ * Console
+ * Log
+ * Database
+ * LogEventGenerator
