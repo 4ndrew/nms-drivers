@@ -217,7 +217,7 @@ public class Ping extends StandartODObject {
     LinkedList<Message> queue = new LinkedList<Message>();
     
     public Pinger() {
-      setName("Pinger thread");
+      setName("Pinger thread: waiting");
     }
     
     public void run() {
@@ -236,6 +236,7 @@ public class Ping extends StandartODObject {
         
         synchronized (queue) {
           if (queue.size() == 0) {
+            setName("Pinger thread: waiting");
             try {
               queue.wait(10000);
             } catch (InterruptedException e) {
@@ -250,6 +251,8 @@ public class Ping extends StandartODObject {
       String deviceName = DevPollMessage.getDeviceName(msg);
       Device device = deviceList.getDeviceByName(deviceName);
       String urn = (String) device.getURNs().get(0);
+      
+      setName("Pinger thread: " + urn);
       
       Message mtogui = dispatcher.getNewMessage();
       DevPollReplyMessage.setup(mtogui, NAME + "-gui", getObjectName(), msg.getId());
@@ -287,6 +290,9 @@ public class Ping extends StandartODObject {
           DevPollReplyMessage.setStatus(mtogui, DevPollReplyMessage.ALARM_POLL_TIMEOUT);
           DevPollReplyMessage.setStatus(mtopoll, DevPollReplyMessage.ALARM_POLL_TIMEOUT);
       }
+      
+      // setting up current device status
+      device.setStatus(DevPollReplyMessage.getStatus(mtopoll));
       
       // multiple sending to Server and UI
       dispatcher.send(mtogui);
