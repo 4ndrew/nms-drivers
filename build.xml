@@ -6,7 +6,7 @@
      ====================================================================== -->
 <project name="NMS " default="all">
 	<!-- dir.top : top directory -->
-	<condition property="dir.top" value="${basedir}/../nms">
+	<condition property="dir.top" value="${basedir}/../../gitrep/nms">
 		<not>
 			<isset property="dir.top" />
 		</not>
@@ -40,16 +40,19 @@
 	<target name="all" description="--> aap drivers code" depends="build" />
 
 	<target name="build" depends="messages">
-		<javac srcdir="server" destdir="${dir.build}" source="1.4">
+		<javac srcdir="server" destdir="${dir.build}" source="1.5">
 			<classpath>
 				<pathelement location="${dir.top}/nms-base/lib/odisp.jar" />
 				<pathelement location="${dir.top}/nms-base/lib/jug.jar" />
+				<pathelement location="${dir.top}/release/server/core-drivers.jar"/>
+				<pathelement location="${dir.top}/release/server/core-server-drivers.jar"/>
 			</classpath>
 		</javac>
 		<javac srcdir="client" destdir="${dir.build}">
 			<classpath>
 				<pathelement location="${dir.top}/nms-base/lib/odisp.jar" />
 				<pathelement location="${dir.top}/nms-base/lib/jug.jar" />
+				<pathelement location="${dir.top}/release/server/core-drivers.jar"/>
 			</classpath>
 		</javac>
 	</target>
