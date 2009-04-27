@@ -4,6 +4,7 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.TimeZone;
 
@@ -33,27 +34,28 @@ import com.novel.nms.server.storage.helpers.GetObjectListHelper;
 /**
  * Dummy driver for dummy object that support only icmp ping. 
  * 
- * @author Andrew A. Porokhin
- * @version 0.1
+ * @author <a href="mailto:andrew.porokhin@gmail.com">Andrew Porokhin</a>
+ * @version 0.2
  */
 public class Ping extends StandartODObject {
   /** Name of the object, also handler. */
   public static final String NAME = "ping";
 
   /** Version of this component. */
-  public static final String VERSION = "0.1";
+  public static final String VERSION = "0.2";
 
   /** Short module description. */
   public static final String FULLNAME = "NMS Ping Object support";
 
   /** Short copyright string. */
-  public static final String COPYRIGHT = "(c) Andrew A. Porokhin";
+  public static final String COPYRIGHT = "(c) Andrew Porokhin";
 
   /** Global device list resource. */
   public DeviceList deviceList;
 
   /** New objects. */
   private List newObjects = new ArrayList();
+  private Pinger pinger = new Pinger();
   
   /**
    * Just default constructor.
@@ -67,54 +69,12 @@ public class Ping extends StandartODObject {
    */
   public final void handleMessage(final Message msg) {
       if (ODObjectLoadedMessage.equals(msg)) {
-          deviceList = ((DeviceList) dispatcher.getResourceManager()
-                  .resourceAcquire(DeviceList.class.getName()));
-          loadDeviceList();
+        deviceList = ((DeviceList) dispatcher.getResourceManager()
+            .resourceAcquire(DeviceList.class.getName()));
+        loadDeviceList();
+        pinger.start();
       } else if (DevPollMessage.equals(msg)) {
-          String deviceName = DevPollMessage.getDeviceName(msg);
-          Device device = deviceList.getDeviceByName(deviceName);
-          String urn = (String) device.getURNs().get(0);
-          
-          Message mtogui = dispatcher.getNewMessage();
-          DevPollReplyMessage.setup(mtogui, NAME + "-gui", getObjectName(), msg.getId());
-          DevPollReplyMessage.setDeviceName(mtogui, deviceName);
-          
-          Message mtopoll = dispatcher.getNewMessage();
-          DevPollReplyMessage.setup(mtopoll, "devpoll", getObjectName(), msg.getId());
-          DevPollReplyMessage.setDeviceName(mtopoll, deviceName);
-          
-          switch (ReachableTest.checkReach(urn)) {
-          case ReachableTest.NO_ERROR:
-              DevPollReplyMessage.setStatus(mtogui, DevPollReplyMessage.ALARM_OK);
-              DevPollReplyMessage.setStatus(mtopoll, DevPollReplyMessage.ALARM_OK);
-              break;
-          case ReachableTest.UNREACHABLE_ERROR:
-          case ReachableTest.UNKNOWN_HOST_ERROR:
-          default:
-              Message m = dispatcher.getNewMessage();
-              LogEventMessage.setup(m, "nmslog", getObjectName(), UUID.getNullUUID());
-              LogEventMessage.setName(m, deviceName);
-              LogEventMessage.setSource(m, deviceName);
-              Calendar c = Calendar.getInstance(TimeZone.getDefault());
-              LogEventMessage.setDate(m, new Long(c.getTimeInMillis() / 1000));
-              LogEventMessage.setLDate(m, new Long(c.getTimeInMillis() / 1000));
-              LogEventMessage.setIndex(m, Device.POLL_TIMEOUT_EVENT_IDX);
-              LogEventMessage.setEvent(m, LogEventMessage.ALARM_POLL_TIMEOUT);
-              LogEventMessage.setObject(m, "");
-              LogEventMessage.setPC(m, "Poll timeout");
-              LogEventMessage.setAI(m, "");
-              LogEventMessage.setEquipStatus(m, LogEventMessage.ALARM_POLL_TIMEOUT);
-              device.addToCurrentLog(m);
-              m.setRoutable(false);
-              dispatcher.send(m);
-              
-              DevPollReplyMessage.setStatus(mtogui, DevPollReplyMessage.ALARM_POLL_TIMEOUT);
-              DevPollReplyMessage.setStatus(mtopoll, DevPollReplyMessage.ALARM_POLL_TIMEOUT);
-          }
-          
-          // multiple sending to Server and UI
-          dispatcher.send(mtogui);
-          dispatcher.send(mtopoll);
+        pinger.addRequest(msg);
       } else if (MapAddObjectMessage.equals(msg)) {
           logger.fine("Adding new object " + MapAddObjectMessage.getName(msg));
           Message toMap = dispatcher.getNewMessage();
@@ -246,6 +206,95 @@ public class Ping extends StandartODObject {
    */
   public final int cleanUp(final int type) {
     return 0;
+  }
+  
+  /*
+   * Worker thread for icmp ping requests. It is used to free ODISP
+   * sender threads from hang up.
+   */
+  private class Pinger extends Thread {
+    /** Ping queue. */
+    LinkedList<Message> queue = new LinkedList<Message>();
+    
+    public void run() {
+      while (!Thread.interrupted()) {
+        Message request = null;
+        
+        synchronized (queue) {
+          if (queue.size() > 0) {
+            request = queue.removeFirst();
+          }
+        }
+        
+        if (request != null) {
+          processMessage(request);
+        }
+        
+        synchronized (queue) {
+          if (queue.size() == 0) {
+            try {
+              queue.wait(10000);
+            } catch (InterruptedException e) {
+              e.printStackTrace();
+            }
+          }
+        }
+      }
+    }
+    
+    private void processMessage(Message msg) {
+      String deviceName = DevPollMessage.getDeviceName(msg);
+      Device device = deviceList.getDeviceByName(deviceName);
+      String urn = (String) device.getURNs().get(0);
+      
+      Message mtogui = dispatcher.getNewMessage();
+      DevPollReplyMessage.setup(mtogui, NAME + "-gui", getObjectName(), msg.getId());
+      DevPollReplyMessage.setDeviceName(mtogui, deviceName);
+      
+      Message mtopoll = dispatcher.getNewMessage();
+      DevPollReplyMessage.setup(mtopoll, "devpoll", getObjectName(), msg.getId());
+      DevPollReplyMessage.setDeviceName(mtopoll, deviceName);
+      
+      switch (ReachableTest.checkReach(urn)) {
+      case ReachableTest.NO_ERROR:
+          DevPollReplyMessage.setStatus(mtogui, DevPollReplyMessage.ALARM_OK);
+          DevPollReplyMessage.setStatus(mtopoll, DevPollReplyMessage.ALARM_OK);
+          break;
+      case ReachableTest.UNREACHABLE_ERROR:
+      case ReachableTest.UNKNOWN_HOST_ERROR:
+      default:
+          Message m = dispatcher.getNewMessage();
+          LogEventMessage.setup(m, "nmslog", getObjectName(), UUID.getNullUUID());
+          LogEventMessage.setName(m, deviceName);
+          LogEventMessage.setSource(m, deviceName);
+          Calendar c = Calendar.getInstance(TimeZone.getDefault());
+          LogEventMessage.setDate(m, new Long(c.getTimeInMillis() / 1000));
+          LogEventMessage.setLDate(m, new Long(c.getTimeInMillis() / 1000));
+          LogEventMessage.setIndex(m, Device.POLL_TIMEOUT_EVENT_IDX);
+          LogEventMessage.setEvent(m, LogEventMessage.ALARM_POLL_TIMEOUT);
+          LogEventMessage.setObject(m, "");
+          LogEventMessage.setPC(m, "Poll timeout");
+          LogEventMessage.setAI(m, "");
+          LogEventMessage.setEquipStatus(m, LogEventMessage.ALARM_POLL_TIMEOUT);
+          device.addToCurrentLog(m);
+          m.setRoutable(false);
+          dispatcher.send(m);
+          
+          DevPollReplyMessage.setStatus(mtogui, DevPollReplyMessage.ALARM_POLL_TIMEOUT);
+          DevPollReplyMessage.setStatus(mtopoll, DevPollReplyMessage.ALARM_POLL_TIMEOUT);
+      }
+      
+      // multiple sending to Server and UI
+      dispatcher.send(mtogui);
+      dispatcher.send(mtopoll);
+    }
+    
+    public void addRequest(Message request) {
+      synchronized (queue) {
+        queue.add(request);
+        queue.notifyAll();
+      }
+    }
   }
 
 }
