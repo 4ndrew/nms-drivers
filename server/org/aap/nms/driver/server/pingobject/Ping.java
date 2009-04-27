@@ -216,6 +216,10 @@ public class Ping extends StandartODObject {
     /** Ping queue. */
     LinkedList<Message> queue = new LinkedList<Message>();
     
+    public Pinger() {
+      setName("Pinger thread");
+    }
+    
     public void run() {
       while (!Thread.interrupted()) {
         Message request = null;
