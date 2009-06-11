@@ -44,15 +44,19 @@
 			<classpath>
 				<pathelement location="${dir.top}/nms-base/lib/odisp.jar" />
 				<pathelement location="${dir.top}/nms-base/lib/jug.jar" />
+				<pathelement location="${dir.top}/release/server/core-storage.jar"/>
 				<pathelement location="${dir.top}/release/server/core-drivers.jar"/>
-				<pathelement location="${dir.top}/release/server/core-server-drivers.jar"/>
+				<pathelement location="${dir.top}/release/server/core-server-drivers-common.jar"/>
+				<pathelement location="${dir.top}/release/server/core-services-messages.jar"/>
 			</classpath>
 		</javac>
 		<javac srcdir="client" destdir="${dir.build}">
 			<classpath>
 				<pathelement location="${dir.top}/nms-base/lib/odisp.jar" />
 				<pathelement location="${dir.top}/nms-base/lib/jug.jar" />
-				<pathelement location="${dir.top}/release/server/core-drivers.jar"/>
+				<pathelement location="${dir.top}/release/client/core-drivers.jar"/>
+				<pathelement location="${dir.top}/release/client/core-services-messages.jar"/>
+				
 			</classpath>
 		</javac>
 	</target>
