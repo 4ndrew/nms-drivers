@@ -99,7 +99,7 @@
 
 		<jar basedir="${dir.build}"
 			destfile="${dir.release.client}/sm-aap-drivers.jar"
-			includes="org/aap/nms/driver/client/pingobject/**/*" excludes="**/*html">
+			includes="org/aap/nms/driver/client/**/*" excludes="**/*html">
 			<manifest>
 				<attribute name="Built-By" value="${user.name}" />
 			</manifest>
@@ -111,7 +111,7 @@
 
 		<jar basedir="${dir.build}"
 			destfile="${dir.release.server}/sm-aap-drivers.jar"
-			includes="org/aap/nms/driver/server/pingobject/**/*" excludes="**/*html">
+			includes="org/aap/nms/driver/server/**/*" excludes="**/*html">
 			<manifest>
 				<attribute name="Built-By" value="${user.name}" />
 			</manifest>

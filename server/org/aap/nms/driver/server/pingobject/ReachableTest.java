@@ -3,6 +3,13 @@ package org.aap.nms.driver.server.pingobject;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Iterator;
+import java.util.LinkedList;
+
+import org.valabs.odisp.common.Message;
+
+import com.novel.nms.messages.DevPollMessage;
+import com.novel.nms.server.devices.common.Device;
 
 /**
  * Just reachable test.
@@ -42,4 +49,5 @@ public class ReachableTest {
         System.out.println("Reachable 127.0.0.1: " + checkReach("127.0.0.1"));
         System.out.println("Reachable 10.50.9.9: " + checkReach("10.50.9.9"));
     }
+    
 }

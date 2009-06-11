@@ -117,6 +117,7 @@ public class LogEventGenerator extends StandartODObject implements Runnable {
                 }
             }
             
+            /*
             c = Calendar.getInstance(TimeZone.getDefault());
             if (c.getTimeInMillis() - currentTime < 1) {
                 try {
@@ -125,6 +126,7 @@ public class LogEventGenerator extends StandartODObject implements Runnable {
                     e.printStackTrace();
                 }
             }
+            */
         }
         logger.info("Event generator thread stopped.");
     }

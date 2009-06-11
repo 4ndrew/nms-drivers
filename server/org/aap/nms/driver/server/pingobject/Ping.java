@@ -1,35 +1,21 @@
 package org.aap.nms.driver.server.pingobject;
 
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.logging.Level;
 
+import org.aap.nms.driver.server.abstraction.AbstractDriver;
 import org.doomdark.uuid.UUID;
 import org.valabs.odisp.common.Message;
-import org.valabs.odisp.common.StandartODObject;
 import org.valabs.stdmsg.ODObjectLoadedMessage;
 
 import com.novel.nms.messages.DevPollMessage;
 import com.novel.nms.messages.DevPollReplyMessage;
-import com.novel.nms.messages.DeviceGetCurrentLogMessage;
-import com.novel.nms.messages.DeviceGetCurrentLogReplyMessage;
-import com.novel.nms.messages.DeviceGetCurrentStatusErrorMessage;
-import com.novel.nms.messages.DeviceGetCurrentStatusMessage;
-import com.novel.nms.messages.DeviceGetCurrentStatusReplyMessage;
 import com.novel.nms.messages.LogEventMessage;
-import com.novel.nms.messages.MapAddObjectMessage;
-import com.novel.nms.messages.MapAddObjectNotifyMessage;
-import com.novel.nms.messages.MapDeleteObjectNotifyMessage;
-import com.novel.nms.messages.MapObjectAddedErrorMessage;
-import com.novel.nms.messages.MapObjectAddedMessage;
 import com.novel.nms.server.devices.common.Device;
-import com.novel.nms.server.devices.common.DeviceList;
-import com.novel.nms.server.storage.Storage;
-import com.novel.nms.server.storage.helpers.GetObjectListHelper;
 
 /**
  * Dummy driver for dummy object that support only icmp ping. 
@@ -37,7 +23,7 @@ import com.novel.nms.server.storage.helpers.GetObjectListHelper;
  * @author <a href="mailto:andrew.porokhin@gmail.com">Andrew Porokhin</a>
  * @version 0.2
  */
-public class Ping extends StandartODObject {
+public class Ping extends AbstractDriver {
   /** Name of the object, also handler. */
   public static final String NAME = "ping";
 
@@ -48,10 +34,7 @@ public class Ping extends StandartODObject {
   public static final String FULLNAME = "NMS Ping Object support";
 
   /** Short copyright string. */
-  public static final String COPYRIGHT = "(c) Andrew Porokhin";
-
-  /** Global device list resource. */
-  public DeviceList deviceList;
+  public static final String COPYRIGHT = "(c) 2009 Andrew Porokhin";
 
   /** New objects. */
   private List newObjects = new ArrayList();
@@ -69,116 +52,16 @@ public class Ping extends StandartODObject {
    */
   public final void handleMessage(final Message msg) {
       if (ODObjectLoadedMessage.equals(msg)) {
-        deviceList = ((DeviceList) dispatcher.getResourceManager()
-            .resourceAcquire(DeviceList.class.getName()));
-        loadDeviceList();
+        // Request deviceList
+        handleCommonMessage(msg);
+        
         pinger.start();
       } else if (DevPollMessage.equals(msg)) {
         pinger.addRequest(msg);
-      } else if (MapAddObjectMessage.equals(msg)) {
-          logger.fine("Adding new object " + MapAddObjectMessage.getName(msg));
-          Message toMap = dispatcher.getNewMessage();
-          MapAddObjectMessage.setup(toMap, "map", getObjectName(), msg.getId());
-          MapAddObjectMessage.copyFrom(toMap, msg);
-          toMap.addField("security", msg.getField("security"));
-          dispatcher.send(toMap);
-          newObjects.addAll(msg.getEnvelope());
-      } else if (MapObjectAddedMessage.equals(msg)) {
-          List localMessages;
-          synchronized (newObjects) {
-              localMessages = new ArrayList(newObjects);
-              newObjects.clear();
-          }
-          List objData = (List) msg.getField("0");
-          Device newDevice = new Device((String) objData.get(0));
-          newDevice.setDriver(getObjectName());
-          Iterator it = ((List) objData.get(1)).iterator();
-          while (it.hasNext()) {
-              String urn = (String) it.next();
-              newDevice.addURN(urn);
-          }
-          deviceList.addDevice(newDevice);
-          
-          dispatcher.send(localMessages);
-          Message notifyMsg = dispatcher.getNewMessage();
-          MapAddObjectNotifyMessage.setup(notifyMsg, Message.RECIPIENT_ALL,
-                  getObjectName(), msg.getId());
-          MapAddObjectNotifyMessage.setName(notifyMsg, (String) objData.get(0));
-          MapAddObjectNotifyMessage.setURN(notifyMsg, (List) objData.get(1));
-          MapAddObjectNotifyMessage.setHandler(notifyMsg, (String) objData.get(2));
-          dispatcher.send(notifyMsg);
-      } else if (MapObjectAddedErrorMessage.equals(msg)) {
-          msg.setDestination(NAME + "-gui");
-          msg.setRoutable(true);
-          dispatcher.send(msg);
-      } else if (DeviceGetCurrentLogMessage.equals(msg)) {
-          final String name = DeviceGetCurrentLogMessage.getName(msg);
-          final Device dev = deviceList.getDeviceByName(name);
-          if (dev != null) {
-              Message m = dispatcher.getNewMessage();
-              DeviceGetCurrentLogReplyMessage.setup(m, msg.getOrigin(),
-                      getObjectName(), msg.getId());
-              DeviceGetCurrentLogReplyMessage.setName(m, name);
-              DeviceGetCurrentLogReplyMessage.setCurrentLog(m, dev.getCurrentLog());
-              dispatcher.send(m);
-          }
-      } else if (DeviceGetCurrentStatusMessage.equals(msg)) {
-          Message m = dispatcher.getNewMessage();
-          Device dev = deviceList.getDeviceByName(DeviceGetCurrentStatusMessage.getDeviceName(msg));
-          if (dev != null) {
-              DeviceGetCurrentStatusReplyMessage.setup(m, msg.getOrigin(),
-                      getObjectName(), msg.getId());
-              DeviceGetCurrentStatusReplyMessage.setDeviceName(m,
-                      DeviceGetCurrentStatusMessage.getDeviceName(msg));
-              DeviceGetCurrentStatusReplyMessage.setStatus(m, new Long(dev.getStatus()));
-          } else {
-              DeviceGetCurrentStatusErrorMessage.setup(m, msg.getOrigin(), getObjectName(), msg.getId());
-              DeviceGetCurrentStatusErrorMessage.initAll(m,
-                      DeviceGetCurrentStatusMessage.getDeviceName(msg),
-              "error.nosuchdevice");
-          }
-          dispatcher.send(m);
-      } else if (MapDeleteObjectNotifyMessage.equals(msg)) {
-          deviceList.removeDeviceByName(MapDeleteObjectNotifyMessage.getName(msg));
       } else {
-          logger.finest("PingObject: I don't understand this message =) ");
-      }
-  }
-
-  /**
-   * Preload deviceList to our local list.
-   */
-  private void loadDeviceList() {
-      GetObjectListHelper gohl = new GetObjectListHelper();
-      try {
-          ((Storage) dispatcher.getResourceManager().resourceAcquire(
-                  Storage.class.getName())).executeRequest(gohl);
-          List list = gohl.getResult();
-          deviceList.clear(getObjectName());
-          Iterator it = list.iterator();
-          while (it.hasNext()) {
-              List objEntry = (List) it.next();
-              logger.fine(objEntry.toString());
-              List urn = (List) objEntry.get(1);
-              String handler = (String) objEntry.get(2);
-              Iterator urn_it = urn.iterator();
-              if (getObjectName().startsWith(handler)) {
-                  Device dev = new Device((String) objEntry.get(0));
-                  dev.setDriver(getObjectName());
-                  while (urn_it.hasNext()) {
-                      String urnS = (String) urn_it.next();
-                      try {
-                          InetAddress.getByName(urnS).toString();
-                          dev.addURN(urnS);
-                      } catch (Exception e) {
-                          dispatcher.getExceptionHandler().signalException(e);
-                      }
-                  }
-                  deviceList.addDevice(dev);
-              }
-          }
-      } catch (Exception e) {
-          dispatcher.getExceptionHandler().signalException(e);
+        if (!handleCommonMessage(msg) && logger.isLoggable(Level.FINEST)) {
+          logger.finest("Message unprocessed by driver: " + msg.toString());
+        }
       }
   }
 
@@ -191,20 +74,10 @@ public class Ping extends StandartODObject {
   }
 
   /* (non-Javadoc)
-   * @see org.valabs.odisp.common.ODObject#getDepends()
-   */
-  public final String[] getDepends() {
-      String[] result = { "dispatcher",
-              Storage.class.getName(),
-              DeviceList.class.getName(),
-      };
-      return result;
-  }
-
-  /* (non-Javadoc)
    * @see org.valabs.odisp.common.StandartODObject#cleanUp(int)
    */
   public final int cleanUp(final int type) {
+    pinger.interrupt();
     return 0;
   }
   
@@ -218,6 +91,7 @@ public class Ping extends StandartODObject {
     
     public Pinger() {
       setName("Pinger thread: waiting");
+      setDaemon(true);
     }
     
     public void run() {
