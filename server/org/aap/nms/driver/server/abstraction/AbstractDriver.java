@@ -1,9 +1,20 @@
-/**
+/* NMS-DRIVERS -- Free NMS packages.
+ * Copyright (C) 2009 Andrew A. Porohin 
  * 
+ * NMS-DRIVERS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, version 2.1 of the License.
+ * 
+ * NMS-DRIVERS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with NMS-DRIVERS.  If not, see <http://www.gnu.org/licenses/>.
  */
 package org.aap.nms.driver.server.abstraction;
 
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -28,9 +39,12 @@ import com.novel.nms.server.storage.Storage;
 import com.novel.nms.server.storage.helpers.GetObjectListHelper;
 
 /**
- * Abstract driver.
+ * Abstract driver implementation. This class designed to simplify
+ * new driver development.
  * 
  * @author (C) 2009 Andrew Porokhin
+ * @version 1.0.1
+ * @source 1.4
  */
 public abstract class AbstractDriver extends StandartODObject {
   /** Dependencies of the Abstract Driver UI. */
@@ -41,7 +55,7 @@ public abstract class AbstractDriver extends StandartODObject {
       };
   
   // TODO: change this.
-  protected List newObjects;
+  protected List newObjects = new ArrayList();
   protected DeviceList deviceList;
   
   /**
@@ -78,8 +92,10 @@ public abstract class AbstractDriver extends StandartODObject {
       MapAddObjectMessage.setup(toMap, "map", getObjectName(), msg.getId());
       MapAddObjectMessage.copyFrom(toMap, msg);
       toMap.addField("security", msg.getField("security"));
-      dispatcher.send(toMap);
-      newObjects.addAll(msg.getEnvelope());
+      synchronized (newObjects) {
+        dispatcher.send(toMap);        
+        newObjects.addAll(msg.getEnvelope());
+      }
     } else if (MapObjectAddedMessage.equals(msg)) {
       List localMessages;
       synchronized (newObjects) {
@@ -87,14 +103,20 @@ public abstract class AbstractDriver extends StandartODObject {
           newObjects.clear();
       }
       List objData = (List) msg.getField("0");
-      Device newDevice = new Device((String) objData.get(0));
+      String newDeviceName = (String) objData.get(0);
+      List urns = (List) objData.get(1);
+      
+      /*
+      Device newDevice = new Device(newDeviceName);
       newDevice.setDriver(getObjectName());
-      Iterator it = ((List) objData.get(1)).iterator();
-      while (it.hasNext()) {
+      for (Iterator it = urns.iterator(); it.hasNext(); ) {
           String urn = (String) it.next();
           newDevice.addURN(urn);
       }
       deviceList.addDevice(newDevice);
+      deviceAdded(newDevice);
+      */
+      processAddDevice(newDeviceName, urns);
       
       dispatcher.send(localMessages);
       Message notifyMsg = dispatcher.getNewMessage();
@@ -161,28 +183,37 @@ public abstract class AbstractDriver extends StandartODObject {
               
               logger.fine(objEntry.toString());
               
+              String deviceName = (String) objEntry.get(0); 
               List urn = (List) objEntry.get(1);
               String handler = (String) objEntry.get(2);
-              Iterator urn_it = urn.iterator();
               if (getObjectName().startsWith(handler)) {
-                  Device dev = new Device((String) objEntry.get(0));
-                  dev.setDriver(getObjectName());
-                  while (urn_it.hasNext()) {
-                      String urnS = (String) urn_it.next();
-                      try {
-                        // TODO: analyse that
-                        // InetAddress.getByName(urnS).toString();
-                        dev.addURN(urnS);
-                      } catch (Exception e) {
-                        dispatcher.getExceptionHandler().signalException(e);
-                      }
-                  }
-                  deviceList.addDevice(dev);
+                  processAddDevice(deviceName, urn);
               }
           }
       } catch (Exception e) {
           dispatcher.getExceptionHandler().signalException(e);
       }
+  }
+
+  protected Device processAddDevice(String deviceName, List urn) {
+    Device dev = new Device(deviceName);
+    dev.setDriver(getObjectName());
+    for (Iterator urn_it = urn.iterator(); urn_it.hasNext(); ) {
+        String urnS = (String) urn_it.next();
+        dev.addURN(urnS);
+    }
+    deviceList.addDevice(dev);
+    deviceAdded(dev);
+    
+    return dev;
+  }
+  
+  /**
+   * Called just after new device added to deviceList.
+   * @param device Device.
+   */
+  protected void deviceAdded(Device device) {
+    // Nothing to do
   }
 
   /* (non-Javadoc)

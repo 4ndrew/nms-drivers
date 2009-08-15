@@ -1,9 +1,22 @@
+/* NMS-DRIVERS -- Free NMS packages.
+ * Copyright (C) 2009 Andrew A. Porohin 
+ * 
+ * NMS-DRIVERS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, version 2.1 of the License.
+ * 
+ * NMS-DRIVERS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with NMS-DRIVERS.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.aap.nms.driver.server.pingobject;
 
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.TimeZone;
 import java.util.logging.Level;
 
@@ -35,9 +48,7 @@ public class Ping extends AbstractDriver {
 
   /** Short copyright string. */
   public static final String COPYRIGHT = "(c) 2009 Andrew Porokhin";
-
-  /** New objects. */
-  private List newObjects = new ArrayList();
+  /** Pinger object. */
   private Pinger pinger = new Pinger();
   
   /**

@@ -39,9 +39,8 @@ import com.novel.nms.messages.client.DeviceUpdateMessage;
 import com.novel.nms.messages.client.DeviceUpdateReplyMessage;
 
 /**
- * Abstract version of the driver.
- * 
  * @author Andrew Porokhin
+ * Abstract version of the driver.
  */
 public abstract class AbstractDriverUI extends StandartODObject {
   /** Dependencies of the Abstract Driver UI. */
