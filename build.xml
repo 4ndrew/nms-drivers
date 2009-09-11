@@ -1,149 +1,151 @@
 <?xml version="1.0"?>
 <!-- ====================================================================== 
      01.12.2008
-	 
-	 NMS Andrew A. Porokhin additional object drivers.
+     Additional object drivers package.
+     
+     (C) 2008-2009 Andrew A. Porokhin
      ====================================================================== -->
 <project name="NMS " default="all">
-	<!-- dir.top : top directory -->
-	<condition property="dir.top" value="${basedir}/../../gitrep/nms">
-		<not>
-			<isset property="dir.top" />
-		</not>
-	</condition>
-	<!-- dir.build : build directory -->
-	<condition property="dir.build" value="${dir.top}/build">
-		<not>
-			<isset property="dir.build" />
-		</not>
-	</condition>
-	<!-- dir.release.root : release directory for packages -->
-	<condition property="dir.release.root" value="${dir.top}/release">
-		<not>
-			<isset property="dir.release.root" />
-		</not>
-	</condition>
-	<!-- dir.library : libraries directory -->
-	<condition property="dir.library" value="${dir.top}/nms-base/lib">
-		<not>
-			<isset property="dir.library" />
-		</not>
-	</condition>
+    <property file="${basedir}/build.user.properties"/>
+    <property file="${basedir}/build.default.properties"/>
+    <import file="${dir.nms}/nms/common-build.xml"/>
 
-	<property name="dir.release.server" location="${dir.release.root}/server" />
-	<property name="dir.release.client" location="${dir.release.root}/client" />
+    <description>
+        Make file for server transports code.
+    </description>
 
-	<description>
-    Make file for server transports code.
-  </description>
+    <target name="all" description="==> aap drivers code" depends="build" />
+    
+    <target name="clean" description="==> clean" depends="clean-remove-build-dir" />
 
-	<target name="all" description="--> aap drivers code" depends="build" />
-
-	<target name="build" depends="messages">
-		<javac srcdir="server" destdir="${dir.build}" source="1.5">
-			<classpath>
-				<pathelement location="${dir.top}/nms-base/lib/odisp.jar" />
-				<pathelement location="${dir.top}/nms-base/lib/jug.jar" />
-				<pathelement location="${dir.top}/release/server/core-storage.jar"/>
-				<pathelement location="${dir.top}/release/server/core-drivers.jar"/>
-				<pathelement location="${dir.top}/release/server/core-server-drivers-common.jar"/>
-				<pathelement location="${dir.top}/release/server/core-services-messages.jar"/>
-			</classpath>
-		</javac>
-		<javac srcdir="client" destdir="${dir.build}">
-			<classpath>
-				<pathelement location="${dir.top}/nms-base/lib/odisp.jar" />
-				<pathelement location="${dir.top}/nms-base/lib/jug.jar" />
-				<pathelement location="${dir.top}/release/client/core-drivers.jar"/>
-				<pathelement location="${dir.top}/release/client/core-services-messages.jar"/>
-				
-			</classpath>
-		</javac>
-	</target>
-	
-	<target name="client-lang">
-		<native2ascii encoding="KOI8-R"
-			src="client/resources/client/language"
-			dest="client/resources/client/language"
-			includes="**/*.src" ext=".lng" />
-	</target>
-
-	<target name="server-lang">
-		<native2ascii encoding="KOI8-R"
-			src="server/resources/server/language"
-			dest="server/resources/server/language"
-			includes="**/*.src" ext=".lng" />
-	</target>
-
-	<target name="messages">
-		<java classname="org.valabs.tplParser.TplParser" classpath="${dir.top}/tools/tplParser.jar">
-			<arg value="${basedir}/messages" />
-		</java>
-		<javac srcdir="messages" destdir="${dir.build}" source="1.4">
-			<classpath>
-				<pathelement location="${dir.top}/nms-base/lib/odisp.jar" />
-				<pathelement location="${dir.top}/nms-base/lib/jug.jar" />
-			</classpath>
-		</javac>
-	</target>
-	
-	<target name="jar-sm-aap-drivers-resources" depends="client-lang">
-	    <delete file="${dir.release.client}/sm-aap-drivers-resources.jar"/>
-	    <jar basedir="client"
-			destfile="${dir.release.client}/sm-aap-drivers-resources.jar"
-			includes="resources/client/**/*png, resources/client/**/*jpg, resources/client/**/*gif, resources/client/**/*xml, resources/client/**/*lng, resources/client/**/*wav" excludes="**/*html"/>
-	</target>
-
-	<target name="jar-sm-aap-drivers-client" depends="build">
-		<delete file="${dir.release.client}/sm-aap-drivers.jar" />
-
-		<jar basedir="${dir.build}"
-			destfile="${dir.release.client}/sm-aap-drivers.jar"
-			includes="org/aap/nms/driver/client/**/*" excludes="**/*html">
-			<manifest>
-				<attribute name="Built-By" value="${user.name}" />
-			</manifest>
-		</jar>
-	</target>
-	
-	<target name="jar-sm-aap-drivers-server" depends="build">
-		<delete file="${dir.release.server}/sm-aap-drivers.jar" />
-
-		<jar basedir="${dir.build}"
-			destfile="${dir.release.server}/sm-aap-drivers.jar"
-			includes="org/aap/nms/driver/server/**/*" excludes="**/*html">
-			<manifest>
-				<attribute name="Built-By" value="${user.name}" />
-			</manifest>
-		</jar>
-	</target>
-	
-	<target name="jar-sm-aap-performance-server" depends="build">
-        <delete file="${dir.release.server}/sm-aap-performance.jar" />
-        <jar basedir="${dir.build}"
-             destfile="${dir.release.server}/sm-aap-perfomance.jar"
-             includes="org/aap/nms/performance/server/**/*" excludes="**/*html">
-		   <manifest>
-		       <attribute name="Built-By" value="${user.name}" />
-		   </manifest>
-		</jar>
+    <target name="build" depends="messages">
+        <javac srcdir="server" destdir="${dir.build}" source="1.5">
+            <classpath refid="build.common.libs"/>
+            <classpath>
+                <pathelement location="${dir.release.server}/core-storage.jar"/>
+                <pathelement location="${dir.release.server}/core-drivers.jar"/>
+                <pathelement location="${dir.release.server}/core-server-drivers-common.jar"/>
+                <pathelement location="${dir.release.server}/core-services-messages.jar"/>
+            </classpath>
+        </javac>
+        <javac srcdir="client" destdir="${dir.build}" source="1.5">
+            <classpath refid="build.common.libs"/>
+            <classpath>
+                <pathelement location="${dir.release.client}/core-drivers.jar"/>
+                <pathelement location="${dir.release.client}/core-devices.jar"/>
+                <pathelement location="${dir.release.client}/core-messages.jar"/>
+                <pathelement location="${dir.release.client}/core-conn.jar"/>
+                <pathelement location="${dir.release.client}/core-services-messages.jar"/>
+            </classpath>
+        </javac>
+    </target>
+    
+    <target name="client-lang">
+        <native2ascii encoding="KOI8-R"
+            src="client/resources/client/language"
+            dest="client/resources/client/language"
+            includes="**/*.src" ext=".lng" />
     </target>
 
-	<target name="jar-sm-aap-drivers-messages" depends="build">
-		<delete file="${dir.release.client}/sm-aap-drivers-messages.jar" />
-		<delete file="${dir.release.server}/sm-aap-drivers-messages.jar" />
+    <target name="server-lang">
+        <native2ascii encoding="KOI8-R"
+            src="server/resources/server/language"
+            dest="server/resources/server/language"
+            includes="**/*.src" ext=".lng" />
+    </target>
 
-		<jar basedir="${dir.build}"
-			destfile="${dir.release.server}/sm-aap-drivers-messages.jar"
-			includes="org/aap/nms/driver/messages/**/*" excludes="**/*html">
-			<manifest>
-				<attribute name="Built-By" value="${user.name}" />
-			</manifest>
-		</jar>
+    <target name="messages">
+        <tpl src="messages" includes="**/*tpl"/>
+        <javac srcdir="messages" destdir="${dir.build}" source="1.4">
+            <classpath>
+                <pathelement location="${dir.top}/nms-base/lib/odisp.jar" />
+                <pathelement location="${dir.top}/nms-base/lib/jug.jar" />
+            </classpath>
+        </javac>
+    </target>
+    
+    <target name="basic-manifest">
+        <manifest file="${file.manifest}" mode="replace">
+            <attribute name="Built-By" value="${user.name}"/>
+            <attribute name="Copyright" value="(C) 2008-2009 Andrew Porokhin"/>
+            <attribute name="Version" value="${build.version}.${build.number}"/>
+            <section name="nms">
+                <attribute name="Creator" value="${user.name}"/>
+                <attribute name="Customer" value="${build.customer}"/>
+                <attribute name="Date" value="${TODAY}"/>
+            </section>
+        </manifest>
+    </target>
+    
+    <!--
+        Jars: release engineering.
+    -->
+    <target name="jar-sm-aap-drivers-resources" depends="client-lang, basic-manifest">
+        <delete file="${dir.release.client}/sm-aap-drivers-resources.jar"/>
+        <jar basedir="client"
+            destfile="${dir.release.client}/sm-aap-drivers-resources.jar"
+            includes="resources/client/**/*png, resources/client/**/*jpg, resources/client/**/*gif, resources/client/**/*xml, resources/client/**/*lng, resources/client/**/*wav" excludes="**/*html"
+            manifest="${file.manifest}"/>
+    </target>
 
-		<copy file="${dir.release.server}/sm-aap-drivers-messages.jar" tofile="${dir.release.client}/sm-aap-drivers-messages.jar" />
-	</target>
+    <target name="jar-sm-aap-drivers-client" depends="build, basic-manifest">
+        <delete file="${dir.release.client}/sm-aap-drivers.jar" />
 
-	<target name="jar" depends="jar-sm-aap-drivers-server, jar-sm-aap-drivers-client, jar-sm-aap-drivers-messages, jar-sm-aap-drivers-resources, jar-sm-aap-performance-server" />
+        <jar basedir="${dir.build}"
+                destfile="${dir.release.client}/sm-aap-drivers.jar"
+                includes="org/aap/nms/driver/client/**/*" excludes="**/*html"
+                manifest="${file.manifest}">
+            <manifest>
+                <attribute name="Description" value="Drivers by AAP, client side." />
+            </manifest>
+        </jar>
+    </target>
+    
+    <target name="jar-sm-aap-drivers-server" depends="build, basic-manifest">
+        <delete file="${dir.release.server}/sm-aap-drivers.jar" />
+
+        <jar basedir="${dir.build}"
+                destfile="${dir.release.server}/sm-aap-drivers.jar"
+                includes="org/aap/nms/driver/server/**/*" excludes="**/*html"
+                manifest="${file.manifest}">
+            <manifest>
+                <attribute name="Description" value="Drivers by AAP, server side." />
+            </manifest>
+        </jar>
+    </target>
+    
+    <target name="jar-sm-aap-performance-server" depends="build, basic-manifest">
+        <delete file="${dir.release.server}/sm-aap-performance.jar" />
+        <jar basedir="${dir.build}"
+                destfile="${dir.release.server}/sm-aap-perfomance.jar"
+                includes="org/aap/nms/performance/server/**/*" excludes="**/*html"
+                manifest="${file.manifest}">
+           <manifest>
+               <attribute name="Description" value="Performance tests for server." />
+           </manifest>
+        </jar>
+    </target>
+
+    <target name="jar-sm-aap-drivers-messages" depends="build, basic-manifest">
+        <delete file="${dir.release.client}/sm-aap-drivers-messages.jar" />
+        <delete file="${dir.release.server}/sm-aap-drivers-messages.jar" />
+
+        <jar basedir="${dir.build}"
+                destfile="${dir.release.server}/sm-aap-drivers-messages.jar"
+                includes="org/aap/nms/driver/messages/**/*" excludes="**/*html"
+                manifest="${file.manifest}">
+            <manifest>
+                <attribute name="Description" value="Messages package for AAP." />
+            </manifest>
+        </jar>
+
+        <copy file="${dir.release.server}/sm-aap-drivers-messages.jar" tofile="${dir.release.client}/sm-aap-drivers-messages.jar" />
+    </target>
+
+    <target name="jar" depends="jar-sm-aap-drivers-server,
+            jar-sm-aap-drivers-client,
+            jar-sm-aap-drivers-messages,
+            jar-sm-aap-drivers-resources,
+            jar-sm-aap-performance-server" />
 </project>
 
