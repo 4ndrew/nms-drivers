@@ -28,6 +28,7 @@ import com.novel.nms.messages.DeviceGetCurrentLogReplyMessage;
 import com.novel.nms.messages.DeviceGetCurrentStatusErrorMessage;
 import com.novel.nms.messages.DeviceGetCurrentStatusMessage;
 import com.novel.nms.messages.DeviceGetCurrentStatusReplyMessage;
+import com.novel.nms.messages.LogEventMessage;
 import com.novel.nms.messages.MapAddObjectMessage;
 import com.novel.nms.messages.MapAddObjectNotifyMessage;
 import com.novel.nms.messages.MapDeleteObjectNotifyMessage;
@@ -46,6 +47,7 @@ import com.novel.nms.server.storage.helpers.GetObjectListHelper;
  * @version 1.0.1
  * @source 1.4
  */
+@SuppressWarnings("unchecked")
 public abstract class AbstractDriver extends StandartODObject {
   /** Dependencies of the Abstract Driver UI. */
   final String[] DEPEDENCIES = new String [] {
@@ -105,6 +107,7 @@ public abstract class AbstractDriver extends StandartODObject {
       List objData = (List) msg.getField("0");
       String newDeviceName = (String) objData.get(0);
       List urns = (List) objData.get(1);
+      String handler = (String) objData.get(2);
       
       /*
       Device newDevice = new Device(newDeviceName);
@@ -116,7 +119,7 @@ public abstract class AbstractDriver extends StandartODObject {
       deviceList.addDevice(newDevice);
       deviceAdded(newDevice);
       */
-      processAddDevice(newDeviceName, urns);
+      processAddDevice(newDeviceName, handler, urns);
       
       dispatcher.send(localMessages);
       Message notifyMsg = dispatcher.getNewMessage();
@@ -167,6 +170,17 @@ public abstract class AbstractDriver extends StandartODObject {
     return true;
   }
   
+  protected boolean isAcceptableHandler(String handler) {
+    String deviceHandler = getObjectName();
+    // TODO: Think about why startsWith, not equals. May be this is a bug.
+    return deviceHandler.startsWith(handler);
+  }
+  
+  protected void clearDeviceList() {
+    String deviceHandler = getObjectName();
+    deviceList.clear(deviceHandler);
+  }
+  
   /**
    * Preload deviceList to our local list.
    */
@@ -176,7 +190,7 @@ public abstract class AbstractDriver extends StandartODObject {
           ((Storage) dispatcher.getResourceManager().resourceAcquire(
                   Storage.class.getName())).executeRequest(gohl);
           List list = gohl.getResult();
-          deviceList.clear(getObjectName());
+          clearDeviceList();
           Iterator it = list.iterator();
           while (it.hasNext()) {
               List objEntry = (List) it.next();
@@ -186,8 +200,8 @@ public abstract class AbstractDriver extends StandartODObject {
               String deviceName = (String) objEntry.get(0); 
               List urn = (List) objEntry.get(1);
               String handler = (String) objEntry.get(2);
-              if (getObjectName().startsWith(handler)) {
-                  processAddDevice(deviceName, urn);
+              if (isAcceptableHandler(handler)) {
+                  processAddDevice(deviceName, handler, urn);
               }
           }
       } catch (Exception e) {
@@ -195,9 +209,17 @@ public abstract class AbstractDriver extends StandartODObject {
       }
   }
 
-  protected Device processAddDevice(String deviceName, List urn) {
+  /**
+   * Process adding of the device. This method can be overriden by driver.
+   * @param deviceName Device name.
+   * @param deviceHandler Device handler.
+   * @param urn List of device URN.
+   * @return Created device with specified properties.
+   */
+  protected Device processAddDevice(String deviceName, String deviceHandler, List urn) {
     Device dev = new Device(deviceName);
-    dev.setDriver(getObjectName());
+    dev.setStatus(LogEventMessage.ALARM_POLL_TIMEOUT);
+    dev.setDriver(deviceHandler);
     for (Iterator urn_it = urn.iterator(); urn_it.hasNext(); ) {
         String urnS = (String) urn_it.next();
         dev.addURN(urnS);

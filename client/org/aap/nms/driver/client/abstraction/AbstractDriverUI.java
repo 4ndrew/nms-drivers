@@ -20,12 +20,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 
+import org.doomdark.uuid.UUID;
 import org.valabs.odisp.common.Message;
 import org.valabs.odisp.common.StandartODObject;
 import org.valabs.stdmsg.ODObjectLoadedMessage;
 import org.valabs.stdobj.translator.Translator;
 
 import com.novel.nms.client.components.DeviceInfo;
+import com.novel.nms.client.devices.DeviceType;
 import com.novel.nms.client.devices.GenericDevice;
 import com.novel.nms.client.tcpclient.NetManager;
 import com.novel.nms.messages.ClearAlarmsMessage;
@@ -37,6 +39,7 @@ import com.novel.nms.messages.client.DeviceRequestMessage;
 import com.novel.nms.messages.client.DeviceRequestReplyMessage;
 import com.novel.nms.messages.client.DeviceUpdateMessage;
 import com.novel.nms.messages.client.DeviceUpdateReplyMessage;
+import com.novel.nms.messages.client.RegisterTypeMessage;
 
 /**
  * @author Andrew Porokhin
@@ -138,6 +141,17 @@ public abstract class AbstractDriverUI extends StandartODObject {
   }
   
   protected abstract void registerDeviceTypes();
+  
+  protected void registerNewDeviceType(DeviceType newDeviceType) {
+    // Send register message.
+    Message registerMessage = dispatcher.getNewMessage();
+    RegisterTypeMessage.setup(registerMessage, GenericDevice.DEVICE_SERVICE,
+            getObjectName(), UUID.getNullUUID());
+    RegisterTypeMessage.setHandler(registerMessage, newDeviceType.getHandler());
+    RegisterTypeMessage.setDeviceType(registerMessage, newDeviceType);
+    
+    dispatcher.send(registerMessage);
+  }
   
   /**
    * 
