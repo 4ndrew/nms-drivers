@@ -155,7 +155,10 @@ public abstract class AbstractDriver extends StandartODObject {
                   DeviceGetCurrentStatusMessage.getDeviceName(msg));
           DeviceGetCurrentStatusReplyMessage.setStatus(m, new Long(dev.getStatus()));
       } else if (MapDeleteObjectNotifyMessage.equals(msg)) {
-        deviceList.removeDeviceByName(MapDeleteObjectNotifyMessage.getName(msg));
+        String deviceName = MapDeleteObjectNotifyMessage.getName(msg);
+        Device device = deviceList.getDeviceByName(deviceName);
+        deviceList.removeDeviceByName(deviceName);
+        deviceDeleted(device);
       } else {
           DeviceGetCurrentStatusErrorMessage.setup(m, msg.getOrigin(), getObjectName(), msg.getId());
           DeviceGetCurrentStatusErrorMessage.initAll(m,
@@ -234,9 +237,8 @@ public abstract class AbstractDriver extends StandartODObject {
    * Called just after new device added to deviceList.
    * @param device Device.
    */
-  protected void deviceAdded(Device device) {
-    // Nothing to do
-  }
+  protected void deviceAdded(Device device) {}
+  protected void deviceDeleted(Device device) {}
 
   /* (non-Javadoc)
    * @see org.valabs.odisp.common.ODObject#getDepends()
